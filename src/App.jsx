@@ -1,157 +1,212 @@
-const stats = [
-  { label: 'Beds Available', value: '128' },
-  { label: 'Doctors Online', value: '34' },
-  { label: 'Patients Today', value: '1,482' },
-  { label: 'Avg. Response', value: '4.2 min' },
+const doctorStats = [
+  { label: 'Appointments', value: '148', trend: '+12%' },
+  { label: 'Patients', value: '82', trend: '+8%' },
+  { label: 'Earnings', value: '$12.4K', trend: '+15%' },
+  { label: 'Satisfaction', value: '96%', trend: '+3%' },
 ]
 
-const services = [
-  'Emergency coordination',
-  'Patient intake & triage',
-  'Lab diagnostics',
-  'Medication tracking',
-  'Hospital operations',
-  'Smart reporting',
+const appointments = [
+  { time: '09:00 AM', patient: 'Sophia Johnson', issue: 'General Checkup', status: 'Confirmed', color: 'bg-emerald-500/15 text-emerald-300' },
+  { time: '10:30 AM', patient: 'James Lee', issue: 'Cardiology Review', status: 'Waiting', color: 'bg-amber-500/15 text-amber-300' },
+  { time: '12:00 PM', patient: 'Ava Martin', issue: 'Dermatology', status: 'Consulting', color: 'bg-sky-500/15 text-sky-300' },
+  { time: '02:15 PM', patient: 'Noah Patel', issue: 'Follow-up', status: 'Confirmed', color: 'bg-emerald-500/15 text-emerald-300' },
 ]
 
-const queue = [
-  { name: 'Surgery Ward', count: '12 active', accent: 'bg-cyan-500/15 text-cyan-300' },
-  { name: 'ICU', count: '7 active', accent: 'bg-emerald-500/15 text-emerald-300' },
-  { name: 'Radiology', count: '9 active', accent: 'bg-violet-500/15 text-violet-300' },
+const patients = [
+  { name: 'Olivia Green', age: 32, condition: 'Hypertension', risk: 'Low', accent: 'bg-emerald-500/15 text-emerald-300' },
+  { name: 'Daniel Scott', age: 47, condition: 'Diabetes', risk: 'Medium', accent: 'bg-amber-500/15 text-amber-300' },
+  { name: 'Emma Wright', age: 28, condition: 'Migraine', risk: 'Low', accent: 'bg-sky-500/15 text-sky-300' },
+  { name: 'Lucas Hall', age: 56, condition: 'Post-op Recovery', risk: 'High', accent: 'bg-rose-500/15 text-rose-300' },
+]
+
+const schedule = [
+  { day: 'Mon', active: false },
+  { day: 'Tue', active: true },
+  { day: 'Wed', active: false },
+  { day: 'Thu', active: false },
+  { day: 'Fri', active: false },
+  { day: 'Sat', active: false },
 ]
 
 export default function App() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
-      <div className="mx-auto max-w-7xl px-6 py-10 lg:px-8">
-        <header className="flex items-center justify-between rounded-full border border-slate-800 bg-slate-900/70 px-5 py-3 backdrop-blur-sm">
+      <div className="mx-auto flex max-w-7xl gap-6 px-4 py-6 lg:px-6">
+        <aside className="hidden w-72 shrink-0 rounded-3xl border border-slate-800 bg-slate-900/80 p-5 lg:block">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-500/15 text-lg font-bold text-cyan-300">
-              A
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-500/15 text-lg font-bold text-cyan-300">
+              Dr
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-400">AYBAK</p>
-              <h1 className="text-base font-semibold text-white">Smart Hospital</h1>
+              <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Doctor</p>
+              <h1 className="text-lg font-semibold text-white">Maya Foster</h1>
             </div>
           </div>
 
-          <nav className="hidden gap-8 text-sm text-slate-300 md:flex">
-            <a href="#overview" className="hover:text-white">Overview</a>
-            <a href="#services" className="hover:text-white">Services</a>
-            <a href="#operations" className="hover:text-white">Operations</a>
+          <nav className="mt-8 space-y-2">
+            {['Dashboard', 'Appointments', 'Patients', 'Reports', 'Messages', 'Settings'].map((item, index) => (
+              <button
+                key={item}
+                className={`flex w-full items-center justify-between rounded-2xl px-3 py-3 text-left text-sm font-medium transition ${
+                  index === 0 ? 'bg-cyan-500/15 text-cyan-300' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                {item}
+                {index === 0 && <span className="rounded-full bg-cyan-500 px-2 py-0.5 text-[10px] font-bold text-slate-950">Live</span>}
+              </button>
+            ))}
           </nav>
 
-          <button className="rounded-full bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400">
-            Access Portal
-          </button>
-        </header>
-
-        <section className="mt-10 grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
-          <div>
-            <span className="inline-flex rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">
-              Live operations dashboard
-            </span>
-            <h2 className="mt-6 text-4xl font-black tracking-tight text-white md:text-6xl">
-              Better care starts with <span className="text-cyan-400">smarter coordination</span>.
-            </h2>
-            <p className="mt-5 max-w-xl text-lg text-slate-300">
-              A unified hospital operations platform for patient flow, staff coordination, diagnostics,
-              and decision support.
-            </p>
-
-            <div className="mt-8 flex flex-wrap gap-4">
-              <button className="rounded-full bg-cyan-500 px-5 py-3 font-semibold text-slate-950 shadow-lg shadow-cyan-500/30 transition hover:bg-cyan-400">
-                Launch Dashboard
-              </button>
-              <button className="rounded-full border border-slate-700 bg-slate-900 px-5 py-3 font-semibold text-white transition hover:border-slate-500 hover:bg-slate-800">
-                View Reports
-              </button>
-            </div>
+          <div className="mt-10 rounded-2xl border border-slate-800 bg-slate-950 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Today</p>
+            <p className="mt-2 text-2xl font-bold text-white">8</p>
+            <p className="text-sm text-slate-400">visits scheduled</p>
           </div>
+        </aside>
 
-          <div className="rounded-3xl border border-slate-800 bg-slate-900 p-5 shadow-2xl shadow-cyan-950/30">
-            <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-400">System health</p>
-                  <p className="text-2xl font-bold text-white">98.6%</p>
-                </div>
-                <span className="rounded-full bg-emerald-500/15 px-2 py-1 text-xs font-semibold text-emerald-300">
-                  Stable
-                </span>
+        <div className="flex-1">
+          <header className="rounded-3xl border border-slate-800 bg-slate-900/80 px-5 py-4 backdrop-blur-sm">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm uppercase tracking-[0.2em] text-cyan-300">Welcome back</p>
+                <h2 className="mt-1 text-3xl font-bold text-white">Doctor Dashboard</h2>
               </div>
 
-              <div className="space-y-4">
-                {queue.map((item) => (
-                  <div key={item.name} className="flex items-center justify-between rounded-xl bg-slate-900 p-3">
-                    <div className="flex items-center gap-3">
-                      <span className={`inline-flex h-2.5 w-2.5 rounded-full ${item.accent.includes('cyan') ? 'bg-cyan-400' : item.accent.includes('emerald') ? 'bg-emerald-400' : 'bg-violet-400'}`} />
-                      <span className="font-medium text-slate-200">{item.name}</span>
+              <div className="flex items-center gap-3">
+                <button className="rounded-full border border-slate-700 bg-slate-950 px-4 py-2 text-sm font-medium text-slate-200 hover:border-slate-500">
+                  Export
+                </button>
+                <button className="rounded-full bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/30 hover:bg-cyan-400">
+                  + New Case
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {doctorStats.map((stat) => (
+              <div key={stat.label} className="rounded-3xl border border-slate-800 bg-slate-900 p-5">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-slate-400">{stat.label}</p>
+                  <span className="rounded-full bg-emerald-500/15 px-2 py-1 text-[10px] font-semibold text-emerald-300">
+                    {stat.trend}
+                  </span>
+                </div>
+                <p className="mt-4 text-3xl font-bold text-white">{stat.value}</p>
+              </div>
+            ))}
+          </section>
+
+          <section className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_0.9fr]">
+            <div className="rounded-3xl border border-slate-800 bg-slate-900 p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Appointments</p>
+                  <h3 className="mt-1 text-2xl font-bold text-white">Today’s Schedule</h3>
+                </div>
+                <button className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs font-medium text-slate-200">
+                  View all
+                </button>
+              </div>
+
+              <div className="mt-5 space-y-4">
+                {appointments.map((item) => (
+                  <div key={item.time} className="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-950 p-4 md:flex-row md:items-center md:justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/10 text-sm font-semibold text-cyan-300">
+                        {item.patient.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-white">{item.patient}</p>
+                        <p className="text-sm text-slate-400">{item.issue}</p>
+                      </div>
                     </div>
-                    <span className="text-sm text-slate-400">{item.count}</span>
+
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <span className="text-sm text-slate-300">{item.time}</span>
+                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${item.color}`}>
+                        {item.status}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
-          </div>
-        </section>
 
-        <section id="overview" className="mt-12 grid gap-5 md:grid-cols-4">
-          {stats.map((stat) => (
-            <div key={stat.label} className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-              <p className="text-sm text-slate-400">{stat.label}</p>
-              <p className="mt-3 text-3xl font-bold text-white">{stat.value}</p>
+            <div className="rounded-3xl border border-slate-800 bg-slate-900 p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Overview</p>
+                  <h3 className="mt-1 text-2xl font-bold text-white">Weekly Load</h3>
+                </div>
+              </div>
+
+              <div className="mt-6 flex items-end justify-between gap-3">
+                {[52, 68, 74, 55, 84, 92, 61].map((value, index) => (
+                  <div key={index} className="flex flex-1 flex-col items-center gap-2">
+                    <div
+                      className={`w-full rounded-t-2xl ${index === 5 ? 'bg-cyan-500' : 'bg-slate-700'}`}
+                      style={{ height: `${value}px` }}
+                    />
+                    <span className="text-xs text-slate-400">{schedule[index].day}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 space-y-3">
+                <div className="flex items-center justify-between rounded-2xl bg-slate-950 p-3">
+                  <span className="text-sm text-slate-300">Emergency Cases</span>
+                  <span className="font-semibold text-white">14</span>
+                </div>
+                <div className="flex items-center justify-between rounded-2xl bg-slate-950 p-3">
+                  <span className="text-sm text-slate-300">Lab Results</span>
+                  <span className="font-semibold text-white">27</span>
+                </div>
+              </div>
             </div>
-          ))}
-        </section>
+          </section>
 
-        <section id="services" className="mt-12 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
-            <p className="text-sm uppercase tracking-[0.2em] text-cyan-300">Core capabilities</p>
-            <h3 className="mt-4 text-3xl font-bold text-white">Healthcare intelligence built for daily operations</h3>
-            <ul className="mt-6 space-y-4">
-              {services.map((item) => (
-                <li key={item} className="flex items-center gap-3 text-slate-200">
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-cyan-500/15 text-cyan-300">
-                    ✓
-                  </span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div id="operations" className="rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 to-slate-950 p-6">
+          <section className="mt-6 rounded-3xl border border-slate-800 bg-slate-900 p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-400">Department summary</p>
-                <h3 className="text-2xl font-bold text-white">Today’s performance</h3>
+                <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Patients</p>
+                <h3 className="mt-1 text-2xl font-bold text-white">Recent Records</h3>
               </div>
-              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300">
-                +12.4%
-              </span>
+              <button className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs font-medium text-slate-200">
+                Manage
+              </button>
             </div>
 
-            <div className="mt-8 space-y-6">
-              {[
-                { label: 'Patient throughput', value: '86%', width: '86%' },
-                { label: 'Staff utilization', value: '75%', width: '75%' },
-                { label: 'Digital workflow adoption', value: '92%', width: '92%' },
-              ].map((item) => (
-                <div key={item.label}>
-                  <div className="mb-2 flex items-center justify-between text-sm text-slate-300">
-                    <span>{item.label}</span>
-                    <span>{item.value}</span>
-                  </div>
-                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-800">
-                    <div className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-blue-500" style={{ width: item.width }} />
-                  </div>
-                </div>
-              ))}
+            <div className="mt-5 overflow-hidden rounded-2xl border border-slate-800">
+              <table className="min-w-full text-left text-sm">
+                <thead className="bg-slate-950 text-slate-400">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Patient</th>
+                    <th className="px-4 py-3 font-medium">Age</th>
+                    <th className="px-4 py-3 font-medium">Condition</th>
+                    <th className="px-4 py-3 font-medium">Risk</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {patients.map((patient) => (
+                    <tr key={patient.name} className="border-t border-slate-800 text-slate-200">
+                      <td className="px-4 py-3 font-medium text-white">{patient.name}</td>
+                      <td className="px-4 py-3">{patient.age}</td>
+                      <td className="px-4 py-3">{patient.condition}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${patient.accent}`}>
+                          {patient.risk}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </div>
-        </section>
+          </section>
+        </div>
       </div>
     </main>
   )
 }
+
