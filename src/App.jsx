@@ -60,7 +60,8 @@ const navItems = [
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [form, setForm] = useState({ email: 'doctor@aybak.com', password: 'admin123' })
+  // F-02 (handoff/01-audit.md): never prefill credentials in source code.
+  const [form, setForm] = useState({ email: '', password: '' })
 
   const handleLogin = (event) => {
     event.preventDefault()
@@ -223,6 +224,7 @@ function LoginPage({ form, setForm, onLogin }) {
                   type="email"
                   value={form.email}
                   onChange={handleChange}
+                  autoComplete="email"
                   className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-cyan-500"
                   placeholder="doctor@aybak.com"
                 />
@@ -238,6 +240,7 @@ function LoginPage({ form, setForm, onLogin }) {
                   type="password"
                   value={form.password}
                   onChange={handleChange}
+                  autoComplete="current-password"
                   className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-cyan-500"
                   placeholder="••••••••"
                 />
@@ -261,8 +264,10 @@ function LoginPage({ form, setForm, onLogin }) {
               </button>
             </form>
 
-            <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-400">
-              Demo credentials: <span className="font-medium text-slate-200">doctor@aybak.com</span> / <span className="font-medium text-slate-200">admin123</span>
+            {/* F-02 (handoff/01-audit.md): honest demo notice instead of displaying credentials. */}
+            <div className="mt-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
+              <span className="font-semibold">Demo mode:</span> any email and password will sign you in.
+              This is not real authentication, and all data shown is synthetic. Not for clinical use.
             </div>
           </div>
         </div>
