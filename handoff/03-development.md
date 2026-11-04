@@ -59,9 +59,10 @@ Test Files  6 passed (6) | Tests  22 passed (22) | Duration ~6.6s
 
 ## باقی‌مانده
 
-- اجرای واقعی CI روی GitHub پس از push (workflow آماده است).
+- ~~اجرای واقعی CI روی GitHub~~ → انجام شد؛ به «پیگیری CI» در شواهد اجرا مراجعه کنید.
 - تصمیم درباره ارتقای شکسته Vite 5→8 (آسیب‌پذیری dev-server؛ در «نیازمند تأیید» 02-repair).
 - پیشنهادهای ساختاری اجنت ۴ (فقط پیشنهاد — اجرا منوط به تأیید).
+- ارتقای actions به v5 (اعلان deprecation: اکشن‌های v4 روی Node 20 هدف‌گذاری شده‌اند و runner آن‌ها را با Node 24 اجرا می‌کند — فقط notice، CI سبز است).
 
 ## نیازمند تأیید (اجرا نشد — مطابق 01/02)
 
@@ -78,3 +79,9 @@ $ npm install -D vitest@^3 jsdom @testing-library/react @testing-library/jest-do
 $ npm test        → 6 files / 22 tests passed ✅
 $ npm run build   → ✓ built in 1.28s (dist/assets/index-DMLJC7zP.js 204.06 kB) ✅
 ```
+
+### پیگیری CI (پس از push)
+
+1. **Run 41899818636 — failure در «Set up job»:** طبق annotation گیت‌هاب، سیاست مخزن اجازه نمی‌دهد اکشن‌ها با tag استفاده شوند: «all actions must be pinned to a full-length commit SHA».
+2. **ترمیم (کامیت `640ced1`):** `actions/checkout@11d5960a…` (v4) و `actions/setup-node@49933ea5…` (v4) به SHA کامل pin شدند؛ runner به `ubuntu-24.04` مقید شد.
+3. **Run 41900016964 — ✅ success:** همه stepها سبز (Checkout → Setup Node → npm ci → Build → Test → Complete job). تنها annotation باقی‌مانده: notice مربوط به Node 20 در اکشن‌های v4 (غیرمسدودکننده؛ در باقی‌مانده ثبت شد).
