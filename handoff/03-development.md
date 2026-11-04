@@ -54,7 +54,7 @@ Test Files  6 passed (6) | Tests  22 passed (22) | Duration ~6.6s
 
 ## فهرست PRها
 
-- **PR:** از `arena/90bc4b95-aybak-hospital-platform` به `main` — شامل هر ۴ مرحله با کامیت‌های جداگانه (محدودیت تک‌برنچی Arena، تأییدشده در مرحله ۰). لینک در خلاصه نهایی و کامیت پایانی درج می‌شود.
+- **PR #64:** https://github.com/MAMONAMINYAR-stack/aybak-hospital-platform/pull/64 — از `arena/90bc4b95-aybak-hospital-platform` به `main`؛ شامل هر ۴ مرحله با کامیت‌های جداگانه (محدودیت تک‌برنچی Arena، تأییدشده در مرحله ۰).
 - merge فقط توسط کاربر.
 
 ## باقی‌مانده
