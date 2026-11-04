@@ -12,4 +12,11 @@ export default defineConfig({
   preview: {
     allowedHosts: ['.e2b.app'],
   },
+  // L-01 (handoff/02-repair.md): Vitest configuration.
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/test/setup.js',
+    css: false,
+  },
 })
