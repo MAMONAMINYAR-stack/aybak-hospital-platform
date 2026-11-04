@@ -1,0 +1,632 @@
+[
+  {
+    "id": "identity-api",
+    "name": "identity-api",
+    "context": "patient-identity",
+    "kind": "api",
+    "tier": 1,
+    "responsibility": "Patient CRUD, search, merge orchestration",
+    "datastore": "PostgreSQL",
+    "scaling": "Horizontal; read replicas per cell"
+  },
+  {
+    "id": "empi-matcher",
+    "name": "empi-matcher",
+    "context": "patient-identity",
+    "kind": "worker",
+    "tier": 1,
+    "responsibility": "Probabilistic demographic matching and review queue",
+    "datastore": "PostgreSQL + search index",
+    "scaling": "Partitioned by tenant"
+  },
+  {
+    "id": "health-id-service",
+    "name": "health-id-service",
+    "context": "patient-identity",
+    "kind": "api",
+    "tier": 1,
+    "responsibility": "National Health ID issuance, verification, revocation",
+    "datastore": "PostgreSQL + national ID registry adapter",
+    "scaling": "Active-active per residency cell"
+  },
+  {
+    "id": "consent-api",
+    "name": "consent-api",
+    "context": "consent-privacy",
+    "kind": "api",
+    "tier": 1,
+    "responsibility": "Consent directive lifecycle",
+    "datastore": "PostgreSQL",
+    "scaling": "Horizontal"
+  },
+  {
+    "id": "policy-decision-point",
+    "name": "policy-decision-point",
+    "context": "consent-privacy",
+    "kind": "api",
+    "tier": 0,
+    "responsibility": "Low-latency authorisation decisions for every access",
+    "datastore": "PostgreSQL + in-memory cache",
+    "scaling": "Horizontal, 3+ replicas, strict latency budget"
+  },
+  {
+    "id": "encounter-api",
+    "name": "encounter-api",
+    "context": "encounters",
+    "kind": "api",
+    "tier": 1,
+    "responsibility": "Encounter lifecycle and care team",
+    "datastore": "PostgreSQL",
+    "scaling": "Horizontal"
+  },
+  {
+    "id": "adt-event-processor",
+    "name": "adt-event-processor",
+    "context": "encounters",
+    "kind": "worker",
+    "tier": 1,
+    "responsibility": "Admission/discharge/transfer stream processing",
+    "datastore": "PostgreSQL + broker",
+    "scaling": "Partitioned by facility"
+  },
+  {
+    "id": "clinical-record-api",
+    "name": "clinical-record-api",
+    "context": "clinical-record",
+    "kind": "api",
+    "tier": 1,
+    "responsibility": "Notes, problems, allergies, observations",
+    "datastore": "PostgreSQL",
+    "scaling": "Horizontal"
+  },
+  {
+    "id": "document-signing-worker",
+    "name": "document-signing-worker",
+    "context": "clinical-record",
+    "kind": "worker",
+    "tier": 0,
+    "responsibility": "Signature creation and verification",
+    "datastore": "PostgreSQL + HSM/KMS",
+    "scaling": "Small, high-assurance pool"
+  },
+  {
+    "id": "patient-summary-service",
+    "name": "patient-summary-service",
+    "context": "clinical-record",
+    "kind": "api",
+    "tier": 1,
+    "responsibility": "Assembles the International Patient Summary view",
+    "datastore": "PostgreSQL read models",
+    "scaling": "Horizontal; cached"
+  },
+  {
+    "id": "orders-api",
+    "name": "orders-api",
+    "context": "orders-diagnostics",
+    "kind": "api",
+    "tier": 1,
+    "responsibility": "Service requests and result lifecycle",
+    "datastore": "PostgreSQL",
+    "scaling": "Horizontal"
+  },
+  {
+    "id": "result-routing-worker",
+    "name": "result-routing-worker",
+    "context": "orders-diagnostics",
+    "kind": "worker",
+    "tier": 0,
+    "responsibility": "Critical result detection and escalation",
+    "datastore": "PostgreSQL + broker",
+    "scaling": "Partitioned by facility"
+  },
+  {
+    "id": "prescribing-api",
+    "name": "prescribing-api",
+    "context": "medication",
+    "kind": "api",
+    "tier": 1,
+    "responsibility": "Medication orders and discontinuation",
+    "datastore": "PostgreSQL",
+    "scaling": "Horizontal"
+  },
+  {
+    "id": "medication-safety-service",
+    "name": "medication-safety-service",
+    "context": "medication",
+    "kind": "api",
+    "tier": 0,
+    "responsibility": "Allergy/interaction/dose safety checks",
+    "datastore": "PostgreSQL + rules engine + knowledge base",
+    "scaling": "Horizontal; fail-closed"
+  },
+  {
+    "id": "administration-api",
+    "name": "administration-api",
+    "context": "medication",
+    "kind": "api",
+    "tier": 0,
+    "responsibility": "Bedside administration and witness capture",
+    "datastore": "PostgreSQL (edge-replicated)",
+    "scaling": "Per-facility edge deployment"
+  },
+  {
+    "id": "emergency-api",
+    "name": "emergency-api",
+    "context": "emergency",
+    "kind": "api",
+    "tier": 0,
+    "responsibility": "Triage, prehospital, mass casualty",
+    "datastore": "PostgreSQL (edge-replicated)",
+    "scaling": "Per-region edge, offline-capable"
+  },
+  {
+    "id": "dispatch-adapter",
+    "name": "dispatch-adapter",
+    "context": "emergency",
+    "kind": "api",
+    "tier": 0,
+    "responsibility": "Integration to ambulance dispatch systems",
+    "datastore": "Stateless",
+    "scaling": "Active-active per region"
+  },
+  {
+    "id": "triage-service",
+    "name": "triage-service",
+    "context": "emergency",
+    "kind": "api",
+    "tier": 0,
+    "responsibility": "Triage category computation and audit",
+    "datastore": "PostgreSQL",
+    "scaling": "Per-facility"
+  },
+  {
+    "id": "telehealth-api",
+    "name": "telehealth-api",
+    "context": "telehealth",
+    "kind": "api",
+    "tier": 1,
+    "responsibility": "Sessions, remote consults, referrals",
+    "datastore": "PostgreSQL",
+    "scaling": "Horizontal"
+  },
+  {
+    "id": "media-session-broker",
+    "name": "media-session-broker",
+    "context": "telehealth",
+    "kind": "api",
+    "tier": 1,
+    "responsibility": "WebRTC/SFU session brokering and recording control",
+    "datastore": "Redis + object storage",
+    "scaling": "Regional; TURN relays"
+  },
+  {
+    "id": "referral-service",
+    "name": "referral-service",
+    "context": "telehealth",
+    "kind": "api",
+    "tier": 1,
+    "responsibility": "Inter-facility referral workflow",
+    "datastore": "PostgreSQL",
+    "scaling": "Horizontal"
+  },
+  {
+    "id": "lab-api",
+    "name": "lab-api",
+    "context": "laboratory",
+    "kind": "api",
+    "tier": 1,
+    "responsibility": "Orders, specimens, results",
+    "datastore": "PostgreSQL",
+    "scaling": "Per-region"
+  },
+  {
+    "id": "lab-workflow-worker",
+    "name": "lab-workflow-worker",
+    "context": "laboratory",
+    "kind": "worker",
+    "tier": 1,
+    "responsibility": "Analyzer integration, delta checks, verification queue",
+    "datastore": "PostgreSQL + broker",
+    "scaling": "Per-laboratory"
+  },
+  {
+    "id": "result-verification-service",
+    "name": "result-verification-service",
+    "context": "laboratory",
+    "kind": "api",
+    "tier": 0,
+    "responsibility": "Two-step verification and release",
+    "datastore": "PostgreSQL",
+    "scaling": "Per-laboratory"
+  },
+  {
+    "id": "imaging-api",
+    "name": "imaging-api",
+    "context": "imaging",
+    "kind": "api",
+    "tier": 1,
+    "responsibility": "Imaging orders and report metadata",
+    "datastore": "PostgreSQL",
+    "scaling": "Per-region"
+  },
+  {
+    "id": "pacs-link-worker",
+    "name": "pacs-link-worker",
+    "context": "imaging",
+    "kind": "worker",
+    "tier": 1,
+    "responsibility": "DICOMweb/PACS reference synchronisation",
+    "datastore": "PostgreSQL + PACS/VNA",
+    "scaling": "Per-imaging-centre"
+  },
+  {
+    "id": "radiology-reporting-service",
+    "name": "radiology-reporting-service",
+    "context": "imaging",
+    "kind": "api",
+    "tier": 1,
+    "responsibility": "Structured reporting and signatures",
+    "datastore": "PostgreSQL",
+    "scaling": "Per-region"
+  },
+  {
+    "id": "dispensing-api",
+    "name": "dispensing-api",
+    "context": "pharmacy-dispensing",
+    "kind": "api",
+    "tier": 1,
+    "responsibility": "Dispense, return, recall response",
+    "datastore": "PostgreSQL",
+    "scaling": "Per-pharmacy, offline-tolerant"
+  },
+  {
+    "id": "pharmacy-inventory-worker",
+    "name": "pharmacy-inventory-worker",
+    "context": "pharmacy-dispensing",
+    "kind": "worker",
+    "tier": 1,
+    "responsibility": "Dispense-to-ledger reconciliation",
+    "datastore": "PostgreSQL",
+    "scaling": "Per-pharmacy"
+  },
+  {
+    "id": "supply-chain-api",
+    "name": "supply-chain-api",
+    "context": "inventory-supply",
+    "kind": "api",
+    "tier": 2,
+    "responsibility": "Items, lots, transfers, recalls",
+    "datastore": "PostgreSQL",
+    "scaling": "Per-region"
+  },
+  {
+    "id": "stock-ledger-worker",
+    "name": "stock-ledger-worker",
+    "context": "inventory-supply",
+    "kind": "worker",
+    "tier": 1,
+    "responsibility": "Append-only movement validation and balance projection",
+    "datastore": "PostgreSQL",
+    "scaling": "Partitioned by facility"
+  },
+  {
+    "id": "billing-api",
+    "name": "billing-api",
+    "context": "billing-revenue",
+    "kind": "api",
+    "tier": 2,
+    "responsibility": "Charges, invoices, payments",
+    "datastore": "PostgreSQL",
+    "scaling": "Horizontal"
+  },
+  {
+    "id": "claims-worker",
+    "name": "claims-worker",
+    "context": "billing-revenue",
+    "kind": "worker",
+    "tier": 2,
+    "responsibility": "Claim assembly, submission, adjudication",
+    "datastore": "PostgreSQL + broker",
+    "scaling": "Per-payer batch"
+  },
+  {
+    "id": "ledger-worker",
+    "name": "ledger-worker",
+    "context": "billing-revenue",
+    "kind": "worker",
+    "tier": 2,
+    "responsibility": "Double-entry posting and reconciliation",
+    "datastore": "PostgreSQL (append-only)",
+    "scaling": "Single-writer per ledger shard"
+  },
+  {
+    "id": "scheduling-api",
+    "name": "scheduling-api",
+    "context": "scheduling-capacity",
+    "kind": "api",
+    "tier": 2,
+    "responsibility": "Appointments and resources",
+    "datastore": "PostgreSQL",
+    "scaling": "Per-region"
+  },
+  {
+    "id": "capacity-planner",
+    "name": "capacity-planner",
+    "context": "scheduling-capacity",
+    "kind": "worker",
+    "tier": 3,
+    "responsibility": "Capacity forecasting and thresholds",
+    "datastore": "Analytics store",
+    "scaling": "Batch + streaming"
+  },
+  {
+    "id": "workforce-api",
+    "name": "workforce-api",
+    "context": "workforce",
+    "kind": "api",
+    "tier": 1,
+    "responsibility": "Staff, roles, credentials, privileges",
+    "datastore": "PostgreSQL",
+    "scaling": "Horizontal"
+  },
+  {
+    "id": "credential-verification-worker",
+    "name": "credential-verification-worker",
+    "context": "workforce",
+    "kind": "worker",
+    "tier": 1,
+    "responsibility": "Licence verification and expiry sweeps",
+    "datastore": "PostgreSQL + registry adapter",
+    "scaling": "Scheduled"
+  },
+  {
+    "id": "facility-registry-api",
+    "name": "facility-registry-api",
+    "context": "facility-registry",
+    "kind": "api",
+    "tier": 2,
+    "responsibility": "Organisation/facility directory",
+    "datastore": "PostgreSQL (replicated)",
+    "scaling": "Read-heavy, global replicas"
+  },
+  {
+    "id": "service-catalog-api",
+    "name": "service-catalog-api",
+    "context": "facility-registry",
+    "kind": "api",
+    "tier": 3,
+    "responsibility": "Service capability catalogue",
+    "datastore": "PostgreSQL",
+    "scaling": "Horizontal"
+  },
+  {
+    "id": "terminology-service",
+    "name": "terminology-service",
+    "context": "terminology",
+    "kind": "api",
+    "tier": 3,
+    "responsibility": "Code systems, value sets, mappings",
+    "datastore": "PostgreSQL + terminology index",
+    "scaling": "Global read replicas"
+  },
+  {
+    "id": "terminology-sync-worker",
+    "name": "terminology-sync-worker",
+    "context": "terminology",
+    "kind": "worker",
+    "tier": 3,
+    "responsibility": "Versioned terminology distribution",
+    "datastore": "Object storage + PostgreSQL",
+    "scaling": "Scheduled"
+  },
+  {
+    "id": "exchange-gateway",
+    "name": "exchange-gateway",
+    "context": "interoperability-exchange",
+    "kind": "gateway",
+    "tier": 1,
+    "responsibility": "Consent-aware cross-organisation exchange",
+    "datastore": "Stateless + policy cache",
+    "scaling": "Per-residency cell"
+  },
+  {
+    "id": "record-locator",
+    "name": "record-locator",
+    "context": "interoperability-exchange",
+    "kind": "api",
+    "tier": 1,
+    "responsibility": "Where records exist, not what they contain",
+    "datastore": "PostgreSQL + search",
+    "scaling": "Per-residency cell"
+  },
+  {
+    "id": "hl7v2-adapter",
+    "name": "hl7v2-adapter",
+    "context": "interoperability-exchange",
+    "kind": "worker",
+    "tier": 1,
+    "responsibility": "HL7 v2 ingestion and quarantine",
+    "datastore": "PostgreSQL + object storage",
+    "scaling": "Per-interface"
+  },
+  {
+    "id": "fhir-facade",
+    "name": "fhir-facade",
+    "context": "interoperability-exchange",
+    "kind": "api",
+    "tier": 1,
+    "responsibility": "FHIR R4 resource API and search",
+    "datastore": "PostgreSQL read models",
+    "scaling": "Horizontal"
+  },
+  {
+    "id": "sync-api",
+    "name": "sync-api",
+    "context": "offline-sync",
+    "kind": "api",
+    "tier": 1,
+    "responsibility": "Delta sync, mutation apply, conflict report",
+    "datastore": "PostgreSQL + object storage",
+    "scaling": "Per-region, burst-capable"
+  },
+  {
+    "id": "snapshot-builder",
+    "name": "snapshot-builder",
+    "context": "offline-sync",
+    "kind": "worker",
+    "tier": 2,
+    "responsibility": "Scoped encrypted offline snapshots",
+    "datastore": "Object storage",
+    "scaling": "Per-region batch"
+  },
+  {
+    "id": "device-trust-service",
+    "name": "device-trust-service",
+    "context": "offline-sync",
+    "kind": "api",
+    "tier": 1,
+    "responsibility": "Enrolment, attestation, revocation, wipe",
+    "datastore": "PostgreSQL + MDM adapter",
+    "scaling": "Horizontal"
+  },
+  {
+    "id": "surveillance-api",
+    "name": "surveillance-api",
+    "context": "public-health",
+    "kind": "api",
+    "tier": 2,
+    "responsibility": "Notifiable disease and indicator queries",
+    "datastore": "Analytics store",
+    "scaling": "Per-region"
+  },
+  {
+    "id": "notifiable-disease-worker",
+    "name": "notifiable-disease-worker",
+    "context": "public-health",
+    "kind": "worker",
+    "tier": 1,
+    "responsibility": "Case detection and de-identification",
+    "datastore": "Analytics store + broker",
+    "scaling": "Partitioned by province"
+  },
+  {
+    "id": "analytics-export-service",
+    "name": "analytics-export-service",
+    "context": "public-health",
+    "kind": "worker",
+    "tier": 3,
+    "responsibility": "Approved aggregate publication",
+    "datastore": "Analytics store",
+    "scaling": "Scheduled"
+  },
+  {
+    "id": "ai-orchestrator",
+    "name": "ai-orchestrator",
+    "context": "ai-governance",
+    "kind": "api",
+    "tier": 1,
+    "responsibility": "Governed inference requests and guardrails",
+    "datastore": "Stateless + model gateway",
+    "scaling": "Horizontal; rate-limited"
+  },
+  {
+    "id": "model-registry-api",
+    "name": "model-registry-api",
+    "context": "ai-governance",
+    "kind": "api",
+    "tier": 1,
+    "responsibility": "Model registration, approval, evaluation evidence",
+    "datastore": "PostgreSQL",
+    "scaling": "Horizontal"
+  },
+  {
+    "id": "ai-oversight-worker",
+    "name": "ai-oversight-worker",
+    "context": "ai-governance",
+    "kind": "worker",
+    "tier": 1,
+    "responsibility": "Review enforcement, drift and incident tracking",
+    "datastore": "PostgreSQL + metrics store",
+    "scaling": "Scheduled + streaming"
+  },
+  {
+    "id": "audit-writer",
+    "name": "audit-writer",
+    "context": "audit-security",
+    "kind": "worker",
+    "tier": 0,
+    "responsibility": "Append-only audit ingestion and replication",
+    "datastore": "Append-only store + WORM archive",
+    "scaling": "Per-cell, no back-pressure loss"
+  },
+  {
+    "id": "access-review-service",
+    "name": "access-review-service",
+    "context": "audit-security",
+    "kind": "worker",
+    "tier": 2,
+    "responsibility": "Periodic access reviews and anomaly cases",
+    "datastore": "PostgreSQL",
+    "scaling": "Scheduled"
+  },
+  {
+    "id": "siem-bridge",
+    "name": "siem-bridge",
+    "context": "audit-security",
+    "kind": "worker",
+    "tier": 1,
+    "responsibility": "Security telemetry to national SOC",
+    "datastore": "Streaming",
+    "scaling": "Per-cell"
+  },
+  {
+    "id": "notification-service",
+    "name": "notification-service",
+    "context": "notifications",
+    "kind": "api",
+    "tier": 2,
+    "responsibility": "Notification orchestration",
+    "datastore": "PostgreSQL",
+    "scaling": "Horizontal"
+  },
+  {
+    "id": "delivery-worker",
+    "name": "delivery-worker",
+    "context": "notifications",
+    "kind": "worker",
+    "tier": 1,
+    "responsibility": "SMS/push/email delivery with evidence",
+    "datastore": "External gateways",
+    "scaling": "Per-channel pools"
+  },
+  {
+    "id": "media-gateway",
+    "name": "media-gateway",
+    "context": "documents-media",
+    "kind": "api",
+    "tier": 1,
+    "responsibility": "Object upload/download with short-lived URLs",
+    "datastore": "Object storage + KMS",
+    "scaling": "Per-region"
+  },
+  {
+    "id": "object-lifecycle-worker",
+    "name": "object-lifecycle-worker",
+    "context": "documents-media",
+    "kind": "worker",
+    "tier": 2,
+    "responsibility": "Retention, legal hold, malware scanning",
+    "datastore": "Object storage",
+    "scaling": "Scheduled"
+  },
+  {
+    "id": "api-gateway",
+    "name": "api-gateway",
+    "context": "notifications",
+    "kind": "gateway",
+    "tier": 0,
+    "responsibility": "Edge authentication, routing, quotas",
+    "datastore": "Stateless",
+    "scaling": "Global anycast"
+  }
+]

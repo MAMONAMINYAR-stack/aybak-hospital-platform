@@ -1,0 +1,1023 @@
+[
+  {
+    "id": "patient-identity",
+    "name": "Patient Identity & National Health ID",
+    "type": "core",
+    "owner_team": "Identity & Exchange",
+    "purpose": "Establish one authoritative, consent-aware patient identity per person across the national network, and issue the National Health ID.",
+    "aggregates": [
+      "Patient",
+      "PatientIdentifier",
+      "HealthIdCredential",
+      "IdentityMatchCandidate"
+    ],
+    "invariants": [
+      "A National Health ID is never reused, never recycled, and never encodes PHI.",
+      "Two patient records may only be merged through a reviewed, reversible link with full lineage.",
+      "An identifier value is unique per (tenant, issuer, type) and case-normalised on write.",
+      "Merge never deletes the source record; it becomes a redirect target."
+    ],
+    "owns": [
+      "patient",
+      "patient_identifier",
+      "person_name",
+      "patient_contact_point",
+      "patient_address",
+      "patient_link",
+      "identity_match_review",
+      "patient_link_organisation",
+      "national_health_id"
+    ],
+    "consistency": "Strong inside a patient aggregate; eventual for cross-facility identity propagation.",
+    "services": [
+      "identity-api",
+      "empi-matcher",
+      "health-id-service"
+    ],
+    "publishes": [
+      "patient.registered.v1",
+      "patient.demographics-updated.v1",
+      "patient.merged.v1",
+      "identity.match-review-required.v1",
+      "health-id.issued.v1",
+      "health-id.revoked.v1"
+    ],
+    "consumes": [
+      "facility.registered.v1",
+      "consent.withdrawn.v1"
+    ]
+  },
+  {
+    "id": "consent-privacy",
+    "name": "Consent, Privacy & Lawful Access",
+    "type": "core",
+    "owner_team": "Privacy & Compliance",
+    "purpose": "Evaluate consent directives, purpose-of-use, and legal basis at every access boundary, and record break-glass use.",
+    "aggregates": [
+      "ConsentDirective",
+      "PrivacyRestriction",
+      "BreakGlassSession",
+      "PurposeOfUse"
+    ],
+    "invariants": [
+      "Deny by default; absence of consent is not consent.",
+      "Break-glass is time-boxed, reason-coded, notified, and independently reviewed.",
+      "A consent withdrawal is effective for new access immediately and never rewrites prior history.",
+      "Policy decisions are versioned; every decision cites the policy version used."
+    ],
+    "owns": [
+      "consent_directive",
+      "break_glass_session",
+      "care_relationship"
+    ],
+    "consistency": "Strong on directives, read-optimised with a short-lived versioned cache.",
+    "services": [
+      "consent-api",
+      "policy-decision-point"
+    ],
+    "publishes": [
+      "consent.granted.v1",
+      "consent.withdrawn.v1",
+      "privacy.restriction-added.v1",
+      "access.break-glass-opened.v1"
+    ],
+    "consumes": [
+      "patient.merged.v1"
+    ]
+  },
+  {
+    "id": "encounters",
+    "name": "Encounters, Admission & Care Teams",
+    "type": "core",
+    "owner_team": "Clinical Core",
+    "purpose": "Model every care contact from arrival to discharge, including transfers, care team membership, and location history.",
+    "aggregates": [
+      "Encounter",
+      "CareTeamMembership",
+      "LocationAssignment"
+    ],
+    "invariants": [
+      "An encounter always references a patient and a facility in the same tenant.",
+      "Status transitions follow the clinical state machine; completed requires an end time.",
+      "Care team changes are append-only history, never destructive edits.",
+      "A discharge summary cannot be signed while unresolved critical results are open without an explicit acknowledgement."
+    ],
+    "owns": [
+      "encounter",
+      "care_team_member",
+      "location_assignment"
+    ],
+    "consistency": "Strong inside the encounter aggregate; eventual for downstream reporting.",
+    "services": [
+      "encounter-api",
+      "adt-event-processor"
+    ],
+    "publishes": [
+      "encounter.started.v1",
+      "encounter.transferred.v1",
+      "encounter.ended.v1",
+      "encounter.discharged.v1",
+      "care-team.updated.v1"
+    ],
+    "consumes": [
+      "patient.registered.v1",
+      "appointment.arrived.v1",
+      "record.share-approved.v1"
+    ]
+  },
+  {
+    "id": "clinical-record",
+    "name": "Clinical Record, Notes & Medical History",
+    "type": "core",
+    "owner_team": "Clinical Core",
+    "purpose": "Own the longitudinal clinical record: signed documents, problems, allergies, observations, immunisations, procedures, family and social history.",
+    "aggregates": [
+      "ClinicalDocument",
+      "DocumentVersion",
+      "Signature",
+      "Problem",
+      "AllergyIntolerance",
+      "Observation",
+      "Immunization"
+    ],
+    "invariants": [
+      "A signed document version is immutable; amendments create a new version with a reason.",
+      "Every clinical statement carries author, effective time, and provenance.",
+      "Allergy and problem entries are never hard-deleted; entered-in-error is an explicit status.",
+      "Clinical values are unit-bearing; a numeric value without a UCUM unit is rejected."
+    ],
+    "owns": [
+      "clinical_document",
+      "document_version",
+      "signature",
+      "problem",
+      "allergy_intolerance",
+      "observation",
+      "immunization",
+      "procedure_record",
+      "family_history",
+      "social_history"
+    ],
+    "consistency": "Strong per document version; eventual for derived summaries and search.",
+    "services": [
+      "clinical-record-api",
+      "document-signing-worker",
+      "patient-summary-service"
+    ],
+    "publishes": [
+      "clinical-note.signed.v1",
+      "clinical-note.amended.v1",
+      "problem.recorded.v1",
+      "allergy.recorded.v1",
+      "observation.recorded.v1",
+      "immunization.recorded.v1"
+    ],
+    "consumes": [
+      "encounter.started.v1",
+      "result.finalized.v1",
+      "document.received-external.v1"
+    ]
+  },
+  {
+    "id": "orders-diagnostics",
+    "name": "Orders & Diagnostic Orchestration",
+    "type": "core",
+    "owner_team": "Clinical Core",
+    "purpose": "Orchestrate service requests and result lifecycle across laboratory, imaging, procedures, and external providers.",
+    "aggregates": [
+      "ServiceRequest",
+      "DiagnosticResult",
+      "ResultValue",
+      "ProvenanceRecord"
+    ],
+    "invariants": [
+      "A result is only final after contributor and verifier identity are recorded.",
+      "A corrected result supersedes but never overwrites a finalised result.",
+      "Order state changes are idempotent and auditable by request id.",
+      "A critical result must have a documented notification before the order is closed."
+    ],
+    "owns": [
+      "service_request",
+      "diagnostic_result",
+      "result_value",
+      "clinical_provenance"
+    ],
+    "consistency": "Strong per order; eventual for cross-facility visibility.",
+    "services": [
+      "orders-api",
+      "result-routing-worker"
+    ],
+    "publishes": [
+      "service-request.created.v1",
+      "service-request.cancelled.v1",
+      "result.finalized.v1",
+      "result.corrected.v1",
+      "result.critical-flagged.v1"
+    ],
+    "consumes": [
+      "encounter.started.v1",
+      "lab-result.released.v1",
+      "radiology-report.finalized.v1",
+      "specimen.rejected.v1"
+    ]
+  },
+  {
+    "id": "medication",
+    "name": "Medication Management & Safety",
+    "type": "core",
+    "owner_team": "Pharmacy & Safety",
+    "purpose": "Own prescribing, safety checking, administration, and reconciliation with hard human-oversight gates.",
+    "aggregates": [
+      "MedicationRequest",
+      "SafetyReview",
+      "MedicationOverride",
+      "Administration",
+      "Reconciliation"
+    ],
+    "invariants": [
+      "No order reaches dispensing without a recorded safety review outcome.",
+      "A hard-stop may only be overridden by an authorised clinician with a reason and, where policy requires, a second reviewer.",
+      "Dose is structured (value + UCUM unit + route + frequency); free text alone is invalid.",
+      "Administration always references an order and, where required, a dispensed lot."
+    ],
+    "owns": [
+      "medication_request",
+      "medication_safety_review",
+      "medication_override",
+      "medication_administration",
+      "medication_reconciliation"
+    ],
+    "consistency": "Strong per order and administration; eventual for formulary updates.",
+    "services": [
+      "prescribing-api",
+      "medication-safety-service",
+      "administration-api"
+    ],
+    "publishes": [
+      "prescription.created.v1",
+      "prescription.verified.v1",
+      "prescription.discontinued.v1",
+      "medication.administered.v1",
+      "medication.safety-alert.v1",
+      "medication.override-recorded.v1"
+    ],
+    "consumes": [
+      "allergy.recorded.v1",
+      "result.finalized.v1",
+      "patient.merged.v1",
+      "dispense.completed.v1"
+    ]
+  },
+  {
+    "id": "emergency",
+    "name": "Emergency & Prehospital Care",
+    "type": "core",
+    "owner_team": "Emergency Systems",
+    "purpose": "Coordinate dispatch, prehospital care, triage, resuscitation, and mass-casualty response where minutes decide outcomes.",
+    "aggregates": [
+      "AmbulanceMission",
+      "PrehospitalContact",
+      "TriageAssessment",
+      "MassCasualtyIncident"
+    ],
+    "invariants": [
+      "Emergency documentation must be completable with no connectivity and reconciled later.",
+      "Triage category changes are timestamped and attributed, never silently overwritten.",
+      "An unidentified patient may be treated under a temporary identity that is later linked, never duplicated.",
+      "Dispatch state is monotonic and idempotent; duplicate dispatch requests are rejected."
+    ],
+    "owns": [],
+    "reads": [
+      "encounter",
+      "observation",
+      "clinical_document",
+      "patient"
+    ],
+    "consistency": "Strong locally, convergent after reconnection; conflict resolution by clinical review.",
+    "services": [
+      "emergency-api",
+      "dispatch-adapter",
+      "triage-service"
+    ],
+    "publishes": [
+      "ambulance.dispatched.v1",
+      "prehospital.contact-recorded.v1",
+      "triage.assigned.v1",
+      "mass-casualty.activated.v1"
+    ],
+    "consumes": [
+      "patient.registered.v1",
+      "appointment.arrived.v1"
+    ]
+  },
+  {
+    "id": "telehealth",
+    "name": "Telemedicine & Remote Consultation",
+    "type": "core",
+    "owner_team": "Digital Care",
+    "purpose": "Deliver remote consultation, asynchronous messaging, and referral between facilities with the same clinical record guarantees.",
+    "aggregates": [
+      "TelehealthSession",
+      "RemoteConsultation",
+      "Referral"
+    ],
+    "invariants": [
+      "A remote consultation is an encounter with an explicit channel and consent to remote care.",
+      "Recordings and transcripts are opt-in, consented, encrypted, and retention-bound.",
+      "A referral has an explicit receiving organisation and cannot auto-close without their action.",
+      "Prescribing remotely requires the same verification gates as in person."
+    ],
+    "owns": [
+      "telehealth_session",
+      "referral"
+    ],
+    "reads": [
+      "appointment",
+      "encounter"
+    ],
+    "consistency": "Strong session state; eventual media artefacts.",
+    "services": [
+      "telehealth-api",
+      "media-session-broker",
+      "referral-service"
+    ],
+    "publishes": [
+      "telehealth.session-started.v1",
+      "telehealth.session-ended.v1",
+      "referral.created.v1",
+      "referral.accepted.v1"
+    ],
+    "consumes": [
+      "patient.registered.v1",
+      "appointment.booked.v1",
+      "encounter.ended.v1"
+    ]
+  },
+  {
+    "id": "laboratory",
+    "name": "Laboratory Operations",
+    "type": "core",
+    "owner_team": "Diagnostics",
+    "purpose": "Manage the laboratory workflow from order acceptance through specimen custody, analysis, verification, and release.",
+    "aggregates": [
+      "LabOrder",
+      "Specimen",
+      "SpecimenEvent",
+      "LabResult",
+      "ReferenceRange",
+      "DeltaCheck"
+    ],
+    "invariants": [
+      "A specimen is unique and traceable for its entire custody chain.",
+      "A rejected specimen cannot produce a released result.",
+      "A released result requires technical and clinical verification per test policy.",
+      "Reference ranges are versioned and resolved at result time, not display time."
+    ],
+    "owns": [
+      "lab_test_definition",
+      "lab_order",
+      "specimen",
+      "specimen_event",
+      "reference_range",
+      "lab_result",
+      "delta_check"
+    ],
+    "consistency": "Strong within the laboratory; eventual to the ordering facility.",
+    "services": [
+      "lab-api",
+      "lab-workflow-worker",
+      "result-verification-service"
+    ],
+    "publishes": [
+      "lab-order.accepted.v1",
+      "specimen.collected.v1",
+      "specimen.received.v1",
+      "specimen.rejected.v1",
+      "lab-result.released.v1"
+    ],
+    "consumes": [
+      "service-request.created.v1",
+      "patient.merged.v1"
+    ]
+  },
+  {
+    "id": "imaging",
+    "name": "Radiology & Medical Imaging",
+    "type": "core",
+    "owner_team": "Diagnostics",
+    "purpose": "Own imaging orders, protocol review, study references in PACS/VNA, and signed radiology reports.",
+    "aggregates": [
+      "ImagingOrder",
+      "ProtocolReview",
+      "StudyReference",
+      "RadiologyReport",
+      "ReportVersion"
+    ],
+    "invariants": [
+      "Pixel data stays in PACS/VNA; the platform stores references, hashes, and reports.",
+      "A study reference is unique by Study Instance UID.",
+      "A final report is signed and immutable; amendments create a new version.",
+      "Laterality and protocol screening are mandatory before acquisition."
+    ],
+    "owns": [
+      "imaging_order",
+      "imaging_protocol",
+      "imaging_study_ref",
+      "radiology_report",
+      "radiology_report_version",
+      "critical_result_notification",
+      "external_result_import"
+    ],
+    "consistency": "Strong for reports; eventual for study availability events.",
+    "services": [
+      "imaging-api",
+      "pacs-link-worker",
+      "radiology-reporting-service"
+    ],
+    "publishes": [
+      "imaging-order.scheduled.v1",
+      "imaging.study-available.v1",
+      "radiology-report.finalized.v1",
+      "critical-result.notified.v1"
+    ],
+    "consumes": [
+      "service-request.created.v1",
+      "encounter.started.v1"
+    ]
+  },
+  {
+    "id": "pharmacy-dispensing",
+    "name": "Pharmacy Dispensing",
+    "type": "core",
+    "owner_team": "Pharmacy & Safety",
+    "purpose": "Dispense against verified prescriptions with lot traceability, returns, and recall response.",
+    "aggregates": [
+      "Dispense",
+      "DispenseReturn",
+      "RecallResponse"
+    ],
+    "invariants": [
+      "No dispense without a verified order and an available, in-date, non-quarantined lot.",
+      "Every dispense decrements inventory through an append-only ledger entry.",
+      "A recall can reach every affected patient and lot within the defined response window.",
+      "A dispense reversal is a new record, never an edit."
+    ],
+    "owns": [
+      "dispense"
+    ],
+    "consistency": "Strong within a pharmacy; eventual for national stock views.",
+    "services": [
+      "dispensing-api",
+      "pharmacy-inventory-worker"
+    ],
+    "publishes": [
+      "dispense.completed.v1",
+      "dispense.reversed.v1",
+      "dispense.recall-response.v1"
+    ],
+    "consumes": [
+      "prescription.verified.v1",
+      "stock.recall-issued.v1",
+      "prescription.discontinued.v1"
+    ]
+  },
+  {
+    "id": "inventory-supply",
+    "name": "Inventory & Supply Chain",
+    "type": "supporting",
+    "owner_team": "Supply Chain",
+    "purpose": "Track stock, lots, expiry, quarantine, transfers, and consumption as an append-only ledger across the national network.",
+    "aggregates": [
+      "StockItem",
+      "StockLocation",
+      "StockLot",
+      "StockMovement",
+      "Recall"
+    ],
+    "invariants": [
+      "Stock balances are derived from the ledger; there is no mutable balance column.",
+      "A movement is signed, attributed, and never updated or deleted.",
+      "Expired, quarantined, or recalled stock cannot be issued.",
+      "Inter-facility transfers balance to zero across the pair."
+    ],
+    "owns": [
+      "stock_item",
+      "stock_location",
+      "stock_lot",
+      "stock_movement",
+      "stock_recall"
+    ],
+    "consistency": "Strong per location; eventual for national aggregate stock.",
+    "services": [
+      "supply-chain-api",
+      "stock-ledger-worker"
+    ],
+    "publishes": [
+      "stock-movement.recorded.v1",
+      "stock.recall-issued.v1",
+      "stock.below-reorder.v1",
+      "stock.expiry-warning.v1"
+    ],
+    "consumes": [
+      "dispense.completed.v1",
+      "facility.registered.v1"
+    ]
+  },
+  {
+    "id": "billing-revenue",
+    "name": "Billing, Claims & Revenue",
+    "type": "supporting",
+    "owner_team": "Revenue Cycle",
+    "purpose": "Price services, issue invoices, allocate payments, manage claims and adjustments, and maintain a double-entry ledger.",
+    "aggregates": [
+      "ChargeItem",
+      "Invoice",
+      "Payment",
+      "Allocation",
+      "Claim",
+      "Adjustment",
+      "LedgerEntry"
+    ],
+    "invariants": [
+      "Money is integer minor units; currency is explicit and never implicit.",
+      "An invoice balance equals total minus allocations, enforced in the database.",
+      "Over-allocation beyond a payment is impossible.",
+      "The ledger is append-only and balanced; corrections are reversals."
+    ],
+    "owns": [
+      "currency",
+      "payer",
+      "coverage_plan",
+      "patient_coverage",
+      "payer_authorization",
+      "charge_master",
+      "charge_item",
+      "invoice",
+      "invoice_line",
+      "payment",
+      "payment_allocation",
+      "refund",
+      "billing_adjustment",
+      "claim",
+      "claim_line",
+      "financial_ledger_entry"
+    ],
+    "consistency": "Strong per invoice and payment; eventual across facilities.",
+    "services": [
+      "billing-api",
+      "claims-worker",
+      "ledger-worker"
+    ],
+    "publishes": [
+      "charge.posted.v1",
+      "invoice.issued.v1",
+      "payment.received.v1",
+      "claim.submitted.v1",
+      "claim.adjudicated.v1",
+      "refund.approved.v1",
+      "ledger.posted.v1"
+    ],
+    "consumes": [
+      "encounter.ended.v1",
+      "dispense.completed.v1",
+      "result.finalized.v1",
+      "claim.adjudicated.v1"
+    ]
+  },
+  {
+    "id": "scheduling-capacity",
+    "name": "Scheduling & Capacity",
+    "type": "supporting",
+    "owner_team": "Operations",
+    "purpose": "Manage appointments, resources, unavailability, and capacity signals across facilities.",
+    "aggregates": [
+      "ScheduleResource",
+      "Unavailability",
+      "Appointment",
+      "CapacitySnapshot"
+    ],
+    "invariants": [
+      "Two booked appointments for one resource may never overlap.",
+      "Bookings are idempotent by request key and version-checked on update.",
+      "Time is stored as an instant plus the source timezone.",
+      "A cancelled slot is immediately rebookable."
+    ],
+    "owns": [
+      "schedule_resource",
+      "resource_unavailability",
+      "appointment",
+      "appointment_transition"
+    ],
+    "consistency": "Strong per resource; eventual for cross-facility capacity views.",
+    "services": [
+      "scheduling-api",
+      "capacity-planner"
+    ],
+    "publishes": [
+      "appointment.booked.v1",
+      "appointment.rescheduled.v1",
+      "appointment.cancelled.v1",
+      "appointment.arrived.v1",
+      "appointment.no-show.v1",
+      "capacity.threshold-reached.v1"
+    ],
+    "consumes": [
+      "encounter.ended.v1",
+      "patient.registered.v1"
+    ]
+  },
+  {
+    "id": "workforce",
+    "name": "Workforce, Credentialing & Privileges",
+    "type": "supporting",
+    "owner_team": "People Operations",
+    "purpose": "Own staff identity binding, roles, credentials, licences, privileges, and assignment scope.",
+    "aggregates": [
+      "StaffPrincipal",
+      "Practitioner",
+      "RoleAssignment",
+      "Credential",
+      "Privilege"
+    ],
+    "invariants": [
+      "A user cannot hold a clinical privilege without a verified, in-date credential.",
+      "Role assignment is scoped by tenant/facility/department and time-bound.",
+      "Credential expiry automatically blocks privileged actions at the next access check.",
+      "Termination revokes sessions and sync devices immediately."
+    ],
+    "owns": [
+      "staff_principal",
+      "practitioner",
+      "role_template",
+      "user_role_assignment",
+      "worker_assignment",
+      "professional_credential",
+      "training_privilege"
+    ],
+    "consistency": "Strong; authoritative for authorisation inputs.",
+    "services": [
+      "workforce-api",
+      "credential-verification-worker"
+    ],
+    "publishes": [
+      "credential.expiring.v1",
+      "privilege.suspended.v1",
+      "staff.terminated.v1"
+    ],
+    "consumes": [
+      "facility.registered.v1"
+    ]
+  },
+  {
+    "id": "facility-registry",
+    "name": "Organisation & Facility Registry",
+    "type": "generic",
+    "owner_team": "National Platform",
+    "purpose": "Maintain the authoritative registry of organisations, facilities, departments, service capability, and opening status.",
+    "aggregates": [
+      "Organization",
+      "Facility",
+      "Department",
+      "ServiceCapability"
+    ],
+    "invariants": [
+      "Facility codes are unique per tenant and globally resolvable.",
+      "A facility cannot be deactivated while active episodes of care exist without an explicit migration plan.",
+      "Service capability changes are versioned and visible to referral and emergency routing."
+    ],
+    "owns": [
+      "organization",
+      "facility",
+      "department"
+    ],
+    "consistency": "Strong; replicated read-only to every cell.",
+    "services": [
+      "facility-registry-api",
+      "service-catalog-api"
+    ],
+    "publishes": [
+      "facility.registered.v1",
+      "facility.status-changed.v1",
+      "service-catalogue.updated.v1"
+    ],
+    "consumes": []
+  },
+  {
+    "id": "terminology",
+    "name": "Terminology & Value Sets",
+    "type": "generic",
+    "owner_team": "Interoperability",
+    "purpose": "Distribute approved code systems, value sets, and versioned mappings so every facility reasons with the same vocabulary.",
+    "aggregates": [
+      "CodeSystem",
+      "ValueSet",
+      "ConceptMap",
+      "MappingVersion"
+    ],
+    "invariants": [
+      "No clinical record may cite a code system version that is not registered.",
+      "Mapping changes never rewrite stored codes; they apply prospectively and are versioned.",
+      "A retired concept remains resolvable for historical records."
+    ],
+    "owns": [
+      "formulary_item"
+    ],
+    "consistency": "Eventual; versioned releases.",
+    "services": [
+      "terminology-service",
+      "terminology-sync-worker"
+    ],
+    "publishes": [
+      "terminology-version.published.v1",
+      "value-set.retired.v1"
+    ],
+    "consumes": []
+  },
+  {
+    "id": "interoperability-exchange",
+    "name": "Health Information Exchange",
+    "type": "core",
+    "owner_team": "Identity & Exchange",
+    "purpose": "Provide the national record locator, FHIR facade, consent-aware sharing gateway, and external interface adapters.",
+    "aggregates": [
+      "ExchangeRequest",
+      "RecordLocation",
+      "SharingAgreement",
+      "InboundMessage"
+    ],
+    "invariants": [
+      "No cross-organisation data leaves without a policy decision and an audit record.",
+      "Every exchange is attributable to a requesting organisation, user, purpose, and legal basis.",
+      "Inbound messages are quarantined until validated and mapped; nothing is written straight into clinical tables.",
+      "Document sharing preserves the source's signature and provenance."
+    ],
+    "owns": [
+      "integration_endpoint",
+      "inbound_message",
+      "sharing_agreement",
+      "record_share_request",
+      "record_share_result",
+      "record_locator_entry"
+    ],
+    "consistency": "Strong for authorisation; eventual for propagation.",
+    "services": [
+      "exchange-gateway",
+      "record-locator",
+      "hl7v2-adapter",
+      "fhir-facade"
+    ],
+    "publishes": [
+      "record-locator.query-logged.v1",
+      "record.share-requested.v1",
+      "record.share-approved.v1",
+      "record.share-denied.v1",
+      "document.received-external.v1"
+    ],
+    "consumes": [
+      "consent.withdrawn.v1",
+      "patient.merged.v1",
+      "clinical-note.signed.v1",
+      "result.finalized.v1"
+    ]
+  },
+  {
+    "id": "offline-sync",
+    "name": "Offline Synchronisation & Field Continuity",
+    "type": "core",
+    "owner_team": "Edge & Devices",
+    "purpose": "Keep care running without connectivity, then converge safely without ever inventing or overwriting clinical facts.",
+    "aggregates": [
+      "SyncDevice",
+      "ChangeLog",
+      "Snapshot",
+      "Conflict"
+    ],
+    "invariants": [
+      "A device holds only the scope it is entitled to, with an expiry and a visible freshness marker.",
+      "No last-write-wins for clinical facts; conflicts require human resolution.",
+      "Every mutation carries a device, user, base version, and idempotency key.",
+      "Revocation triggers local wipe on next contact and blocks sync immediately."
+    ],
+    "owns": [
+      "sync_device",
+      "sync_change_log"
+    ],
+    "consistency": "Convergent with explicit conflict handling; never silent merges of clinical data.",
+    "services": [
+      "sync-api",
+      "snapshot-builder",
+      "device-trust-service"
+    ],
+    "publishes": [
+      "device.enrolled.v1",
+      "device.revoked.v1",
+      "sync.batch-applied.v1",
+      "sync.conflict-detected.v1",
+      "sync.snapshot-issued.v1"
+    ],
+    "consumes": [
+      "patient.merged.v1",
+      "staff.terminated.v1",
+      "consent.withdrawn.v1"
+    ]
+  },
+  {
+    "id": "public-health",
+    "name": "Public Health Surveillance & Reporting",
+    "type": "core",
+    "owner_team": "Public Health",
+    "purpose": "Turn care data into notifiable-disease signals, coverage indicators, and ministry reporting without exposing individual records.",
+    "aggregates": [
+      "NotifiableDiseaseReport",
+      "SurveillanceSignal",
+      "IndicatorSnapshot",
+      "Outbreak"
+    ],
+    "invariants": [
+      "Surveillance receives the minimum dataset; identifiers are replaced by linkage tokens.",
+      "Small-cell suppression applies to every published aggregate.",
+      "A signal never identifies an individual and never auto-triggers enforcement action.",
+      "Reporting definitions are versioned and reproducible."
+    ],
+    "owns": [],
+    "reads": [
+      "encounter",
+      "observation",
+      "immunization",
+      "diagnostic_result"
+    ],
+    "consistency": "Eventual; batch and streaming indicators.",
+    "services": [
+      "surveillance-api",
+      "notifiable-disease-worker",
+      "analytics-export-service"
+    ],
+    "publishes": [
+      "notifiable-disease.reported.v1",
+      "surveillance-signal.detected.v1",
+      "outbreak.alert-issued.v1",
+      "immunization-coverage.updated.v1"
+    ],
+    "consumes": [
+      "result.finalized.v1",
+      "immunization.recorded.v1",
+      "encounter.discharged.v1",
+      "patient.registered.v1"
+    ]
+  },
+  {
+    "id": "ai-governance",
+    "name": "Clinical AI Governance & Assistance",
+    "type": "core",
+    "owner_team": "Clinical Informatics & AI Safety",
+    "purpose": "Register, approve, run, review, and audit AI assistance with human oversight and fail-closed behaviour.",
+    "aggregates": [
+      "ModelRegistration",
+      "InferenceRecord",
+      "OutputReview",
+      "SafetyIncident"
+    ],
+    "invariants": [
+      "No inference runs on an unapproved model version.",
+      "AI output is a draft until a named clinician accepts, edits, or rejects it.",
+      "Every inference records inputs by reference, prompt version, and model version.",
+      "Any AI safety incident is recorded and can trigger immediate model suspension."
+    ],
+    "owns": [
+      "ai_model_registration",
+      "ai_inference_record",
+      "ai_output_review",
+      "ai_model_feedback"
+    ],
+    "consistency": "Strong for approvals; eventual for evaluation telemetry.",
+    "services": [
+      "ai-orchestrator",
+      "model-registry-api",
+      "ai-oversight-worker"
+    ],
+    "publishes": [
+      "ai.inference-completed.v1",
+      "ai.output-reviewed.v1",
+      "ai.model-approved.v1",
+      "ai.safety-incident.v1"
+    ],
+    "consumes": [
+      "clinical-note.signed.v1",
+      "allergy.recorded.v1",
+      "result.finalized.v1",
+      "ai.safety-incident.v1"
+    ]
+  },
+  {
+    "id": "audit-security",
+    "name": "Audit, Security & Access Evidence",
+    "type": "supporting",
+    "owner_team": "Security",
+    "purpose": "Provide tamper-evident audit, access review, anomaly detection, and independent evidence retention.",
+    "aggregates": [
+      "AuditEvent",
+      "AccessExport",
+      "SecuritySignal",
+      "ReviewCase"
+    ],
+    "invariants": [
+      "Audit is append-only, tenant-scoped, and independent of the application database.",
+      "Audit stores field names and metadata, never full PHI payloads.",
+      "Audit survives loss of a clinical cell and is retained per legal schedule.",
+      "Every privileged action is attributable to a human or a named service identity."
+    ],
+    "owns": [
+      "audit_event",
+      "access_export"
+    ],
+    "consistency": "Append-only, eventually consistent replication to an independent store.",
+    "services": [
+      "audit-writer",
+      "access-review-service",
+      "siem-bridge"
+    ],
+    "publishes": [
+      "audit.event-recorded.v1",
+      "access.export-completed.v1",
+      "security.anomaly-detected.v1"
+    ],
+    "consumes": [
+      "access.break-glass-opened.v1",
+      "record.share-approved.v1",
+      "record.share-denied.v1",
+      "ai.safety-incident.v1"
+    ]
+  },
+  {
+    "id": "notifications",
+    "name": "Notifications & Clinical Communication",
+    "type": "generic",
+    "owner_team": "Platform",
+    "purpose": "Deliver critical-result, appointment, and recall notifications across channels with delivery evidence.",
+    "aggregates": [
+      "Notification",
+      "DeliveryAttempt",
+      "Subscription"
+    ],
+    "invariants": [
+      "A critical result notification is retried until acknowledged or escalated to a human.",
+      "Delivery is never claimed as success without evidence.",
+      "Patient-facing messages contain the minimum necessary information."
+    ],
+    "owns": [
+      "outbox_event",
+      "delivery_attempt"
+    ],
+    "consistency": "At-least-once with acknowledgement.",
+    "services": [
+      "notification-service",
+      "delivery-worker"
+    ],
+    "publishes": [
+      "notification.delivered.v1",
+      "notification.failed.v1"
+    ],
+    "consumes": [
+      "result.critical-flagged.v1",
+      "appointment.booked.v1",
+      "stock.recall-issued.v1",
+      "credential.expiring.v1"
+    ]
+  },
+  {
+    "id": "documents-media",
+    "name": "Documents & Medical Media",
+    "type": "supporting",
+    "owner_team": "Platform",
+    "purpose": "Store, encrypt, scan, version, and serve documents, scans, and media references under least-privilege access.",
+    "aggregates": [
+      "StoredObject",
+      "ObjectVersion",
+      "RetentionPolicy"
+    ],
+    "invariants": [
+      "Objects are encrypted at rest with tenant-scoped keys and accessed only via short-lived authorised URLs.",
+      "Every object is hash-recorded, malware-scanned, and immutable once attached to a signed record.",
+      "Deletion is policy-driven and auditable; legal holds override deletion."
+    ],
+    "owns": [],
+    "reads": [
+      "clinical_document",
+      "radiology_report_version",
+      "access_export"
+    ],
+    "consistency": "Strong per object; eventual for derived indexes.",
+    "services": [
+      "media-gateway",
+      "object-lifecycle-worker"
+    ],
+    "publishes": [
+      "document.stored.v1",
+      "document.scan-failed.v1"
+    ],
+    "consumes": [
+      "clinical-note.signed.v1",
+      "radiology-report.finalized.v1"
+    ]
+  }
+]

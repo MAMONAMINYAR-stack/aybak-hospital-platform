@@ -1,0 +1,1401 @@
+[
+  {
+    "name": "patient.registered.v1",
+    "version": 1,
+    "producer": "identity-api",
+    "consumers_contexts": [
+      "encounters",
+      "laboratory",
+      "imaging",
+      "medication",
+      "billing-api",
+      "offline-sync",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, patient_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "A new patient identity was created."
+  },
+  {
+    "name": "patient.demographics-updated.v1",
+    "version": 1,
+    "producer": "identity-api",
+    "consumers_contexts": [
+      "patient-summary-service",
+      "record-locator",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, patient_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Demographics changed; consumers must re-fetch, not trust the delta."
+  },
+  {
+    "name": "patient.merged.v1",
+    "version": 1,
+    "producer": "identity-api",
+    "consumers_contexts": [
+      "encounters",
+      "clinical-record",
+      "laboratory",
+      "imaging",
+      "medication",
+      "offline-sync",
+      "exchange-gateway"
+    ],
+    "partition_key": "tenant_id, patient_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "Two identities were merged with lineage retained."
+  },
+  {
+    "name": "identity.match-review-required.v1",
+    "version": 1,
+    "producer": "empi-matcher",
+    "consumers_contexts": [
+      "identity-api",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, candidate_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Probable duplicate needs human review before merge."
+  },
+  {
+    "name": "health-id.issued.v1",
+    "version": 1,
+    "producer": "health-id-service",
+    "consumers_contexts": [
+      "record-locator",
+      "exchange-gateway",
+      "audit-writer"
+    ],
+    "partition_key": "national_health_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "A National Health ID was issued to a patient."
+  },
+  {
+    "name": "health-id.revoked.v1",
+    "version": 1,
+    "producer": "health-id-service",
+    "consumers_contexts": [
+      "record-locator",
+      "exchange-gateway",
+      "offline-sync",
+      "audit-writer"
+    ],
+    "partition_key": "national_health_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "A Health ID credential was revoked (fraud, death, error)."
+  },
+  {
+    "name": "consent.granted.v1",
+    "version": 1,
+    "producer": "consent-api",
+    "consumers_contexts": [
+      "policy-decision-point",
+      "exchange-gateway",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, patient_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "A consent directive became effective."
+  },
+  {
+    "name": "consent.withdrawn.v1",
+    "version": 1,
+    "producer": "consent-api",
+    "consumers_contexts": [
+      "policy-decision-point",
+      "exchange-gateway",
+      "offline-sync",
+      "identity-api",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, patient_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "A consent directive was withdrawn; new access must stop."
+  },
+  {
+    "name": "privacy.restriction-added.v1",
+    "version": 1,
+    "producer": "consent-api",
+    "consumers_contexts": [
+      "policy-decision-point",
+      "exchange-gateway",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, patient_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "A restriction (e.g. VIP, safeguarding) was recorded."
+  },
+  {
+    "name": "access.break-glass-opened.v1",
+    "version": 1,
+    "producer": "consent-api",
+    "consumers_contexts": [
+      "audit-writer",
+      "access-review-service",
+      "siem-bridge"
+    ],
+    "partition_key": "tenant_id, session_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "Emergency access override was used and must be reviewed."
+  },
+  {
+    "name": "encounter.started.v1",
+    "version": 1,
+    "producer": "encounter-api",
+    "consumers_contexts": [
+      "clinical-record",
+      "orders-api",
+      "billing-api",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, encounter_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "A care encounter began."
+  },
+  {
+    "name": "encounter.transferred.v1",
+    "version": 1,
+    "producer": "adt-event-processor",
+    "consumers_contexts": [
+      "clinical-record",
+      "billing-api",
+      "capacity-planner"
+    ],
+    "partition_key": "tenant_id, encounter_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Patient moved between locations or facilities."
+  },
+  {
+    "name": "encounter.ended.v1",
+    "version": 1,
+    "producer": "encounter-api",
+    "consumers_contexts": [
+      "billing-api",
+      "scheduling-capacity",
+      "public-health",
+      "clinical-record"
+    ],
+    "partition_key": "tenant_id, encounter_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Encounter closed."
+  },
+  {
+    "name": "encounter.discharged.v1",
+    "version": 1,
+    "producer": "adt-event-processor",
+    "consumers_contexts": [
+      "clinical-record",
+      "billing-api",
+      "public-health",
+      "notification-service"
+    ],
+    "partition_key": "tenant_id, encounter_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Discharge completed with summary obligations."
+  },
+  {
+    "name": "care-team.updated.v1",
+    "version": 1,
+    "producer": "encounter-api",
+    "consumers_contexts": [
+      "policy-decision-point",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, encounter_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Care team membership changed."
+  },
+  {
+    "name": "clinical-note.signed.v1",
+    "version": 1,
+    "producer": "document-signing-worker",
+    "consumers_contexts": [
+      "audit-writer",
+      "exchange-gateway",
+      "documents-media",
+      "ai-orchestrator"
+    ],
+    "partition_key": "tenant_id, patient_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "A clinical document version was signed and locked."
+  },
+  {
+    "name": "clinical-note.amended.v1",
+    "version": 1,
+    "producer": "clinical-record-api",
+    "consumers_contexts": [
+      "audit-writer",
+      "exchange-gateway"
+    ],
+    "partition_key": "tenant_id, patient_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "A signed document was amended with a new version."
+  },
+  {
+    "name": "problem.recorded.v1",
+    "version": 1,
+    "producer": "clinical-record-api",
+    "consumers_contexts": [
+      "patient-summary-service",
+      "exchange-gateway",
+      "public-health"
+    ],
+    "partition_key": "tenant_id, patient_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "A diagnosis/problem was added to the record."
+  },
+  {
+    "name": "allergy.recorded.v1",
+    "version": 1,
+    "producer": "clinical-record-api",
+    "consumers_contexts": [
+      "medication",
+      "patient-summary-service",
+      "ai-orchestrator"
+    ],
+    "partition_key": "tenant_id, patient_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "An allergy or intolerance was recorded or updated."
+  },
+  {
+    "name": "observation.recorded.v1",
+    "version": 1,
+    "producer": "clinical-record-api",
+    "consumers_contexts": [
+      "patient-summary-service",
+      "public-health",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, patient_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "A clinical observation was recorded."
+  },
+  {
+    "name": "immunization.recorded.v1",
+    "version": 1,
+    "producer": "clinical-record-api",
+    "consumers_contexts": [
+      "patient-summary-service",
+      "public-health",
+      "exchange-gateway"
+    ],
+    "partition_key": "tenant_id, patient_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "An immunisation was administered and recorded."
+  },
+  {
+    "name": "service-request.created.v1",
+    "version": 1,
+    "producer": "orders-api",
+    "consumers_contexts": [
+      "laboratory",
+      "imaging",
+      "billing-api",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, request_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "A new order was placed."
+  },
+  {
+    "name": "service-request.cancelled.v1",
+    "version": 1,
+    "producer": "orders-api",
+    "consumers_contexts": [
+      "laboratory",
+      "imaging",
+      "billing-api"
+    ],
+    "partition_key": "tenant_id, request_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "An order was cancelled before completion."
+  },
+  {
+    "name": "result.finalized.v1",
+    "version": 1,
+    "producer": "orders-api",
+    "consumers_contexts": [
+      "clinical-record",
+      "patient-summary-service",
+      "billing-api",
+      "public-health",
+      "ai-orchestrator"
+    ],
+    "partition_key": "tenant_id, patient_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "A diagnostic result reached final status."
+  },
+  {
+    "name": "result.corrected.v1",
+    "version": 1,
+    "producer": "orders-api",
+    "consumers_contexts": [
+      "clinical-record",
+      "patient-summary-service",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, patient_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "A previously final result was corrected."
+  },
+  {
+    "name": "result.critical-flagged.v1",
+    "version": 1,
+    "producer": "result-routing-worker",
+    "consumers_contexts": [
+      "notification-service",
+      "emergency",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, patient_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "A critical result requires documented clinician acknowledgement."
+  },
+  {
+    "name": "prescription.created.v1",
+    "version": 1,
+    "producer": "prescribing-api",
+    "consumers_contexts": [
+      "pharmacy-dispensing",
+      "billing-api",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, patient_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "A medication order was authored."
+  },
+  {
+    "name": "prescription.verified.v1",
+    "version": 1,
+    "producer": "prescribing-api",
+    "consumers_contexts": [
+      "pharmacy-dispensing",
+      "administration-api"
+    ],
+    "partition_key": "tenant_id, patient_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "A medication order passed safety review and pharmacist verification."
+  },
+  {
+    "name": "prescription.discontinued.v1",
+    "version": 1,
+    "producer": "prescribing-api",
+    "consumers_contexts": [
+      "pharmacy-dispensing",
+      "administration-api",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, patient_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "A medication order was discontinued with a reason."
+  },
+  {
+    "name": "medication.administered.v1",
+    "version": 1,
+    "producer": "administration-api",
+    "consumers_contexts": [
+      "clinical-record",
+      "billing-api",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, patient_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "A dose was administered, held, or documented as not given."
+  },
+  {
+    "name": "medication.safety-alert.v1",
+    "version": 1,
+    "producer": "medication-safety-service",
+    "consumers_contexts": [
+      "prescribing-api",
+      "audit-writer",
+      "ai-oversight-worker"
+    ],
+    "partition_key": "tenant_id, request_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "A safety check returned a warning, hard stop, or failed-closed state."
+  },
+  {
+    "name": "medication.override-recorded.v1",
+    "version": 1,
+    "producer": "prescribing-api",
+    "consumers_contexts": [
+      "audit-writer",
+      "access-review-service"
+    ],
+    "partition_key": "tenant_id, request_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "A clinician overrode a safety alert with justification."
+  },
+  {
+    "name": "lab-order.accepted.v1",
+    "version": 1,
+    "producer": "lab-api",
+    "consumers_contexts": [
+      "orders-api",
+      "scheduling-capacity"
+    ],
+    "partition_key": "tenant_id, order_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Laboratory accepted an order."
+  },
+  {
+    "name": "specimen.collected.v1",
+    "version": 1,
+    "producer": "lab-api",
+    "consumers_contexts": [
+      "orders-api",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, specimen_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Specimen collected and custody started."
+  },
+  {
+    "name": "specimen.received.v1",
+    "version": 1,
+    "producer": "lab-api",
+    "consumers_contexts": [
+      "orders-api",
+      "lab-workflow-worker"
+    ],
+    "partition_key": "tenant_id, specimen_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Laboratory received the specimen."
+  },
+  {
+    "name": "specimen.rejected.v1",
+    "version": 1,
+    "producer": "lab-api",
+    "consumers_contexts": [
+      "orders-api",
+      "notification-service"
+    ],
+    "partition_key": "tenant_id, specimen_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Specimen rejected; recollection required."
+  },
+  {
+    "name": "lab-result.released.v1",
+    "version": 1,
+    "producer": "result-verification-service",
+    "consumers_contexts": [
+      "orders-api",
+      "public-health"
+    ],
+    "partition_key": "tenant_id, patient_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "Verified laboratory result released."
+  },
+  {
+    "name": "imaging-order.scheduled.v1",
+    "version": 1,
+    "producer": "imaging-api",
+    "consumers_contexts": [
+      "scheduling-capacity",
+      "orders-api"
+    ],
+    "partition_key": "tenant_id, order_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Imaging appointment scheduled."
+  },
+  {
+    "name": "imaging.study-available.v1",
+    "version": 1,
+    "producer": "pacs-link-worker",
+    "consumers_contexts": [
+      "radiology-reporting-service",
+      "orders-api"
+    ],
+    "partition_key": "tenant_id, study_uid",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Study is available in PACS/VNA."
+  },
+  {
+    "name": "radiology-report.finalized.v1",
+    "version": 1,
+    "producer": "radiology-reporting-service",
+    "consumers_contexts": [
+      "orders-api",
+      "clinical-record",
+      "exchange-gateway"
+    ],
+    "partition_key": "tenant_id, patient_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "Signed radiology report finalised."
+  },
+  {
+    "name": "critical-result.notified.v1",
+    "version": 1,
+    "producer": "imaging-api",
+    "consumers_contexts": [
+      "audit-writer",
+      "notification-service"
+    ],
+    "partition_key": "tenant_id, patient_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "Critical imaging finding communicated with read-back."
+  },
+  {
+    "name": "dispense.completed.v1",
+    "version": 1,
+    "producer": "dispensing-api",
+    "consumers_contexts": [
+      "medication",
+      "billing-api",
+      "stock-ledger-worker",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, dispense_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Medication dispensed against a verified order."
+  },
+  {
+    "name": "dispense.reversed.v1",
+    "version": 1,
+    "producer": "dispensing-api",
+    "consumers_contexts": [
+      "medication",
+      "billing-api",
+      "stock-ledger-worker"
+    ],
+    "partition_key": "tenant_id, dispense_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "A dispense was returned or reversed."
+  },
+  {
+    "name": "dispense.recall-response.v1",
+    "version": 1,
+    "producer": "dispensing-api",
+    "consumers_contexts": [
+      "audit-writer",
+      "public-health"
+    ],
+    "partition_key": "tenant_id, recall_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "Pharmacy completed recall actions."
+  },
+  {
+    "name": "stock-movement.recorded.v1",
+    "version": 1,
+    "producer": "stock-ledger-worker",
+    "consumers_contexts": [
+      "supply-chain-api",
+      "billing-api"
+    ],
+    "partition_key": "tenant_id, location_id",
+    "contains_phi": false,
+    "retention_days": 3650,
+    "description": "Append-only stock ledger entry recorded."
+  },
+  {
+    "name": "stock.recall-issued.v1",
+    "version": 1,
+    "producer": "supply-chain-api",
+    "consumers_contexts": [
+      "pharmacy-dispensing",
+      "notification-service",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, recall_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "A lot or item recall was issued."
+  },
+  {
+    "name": "stock.below-reorder.v1",
+    "version": 1,
+    "producer": "stock-ledger-worker",
+    "consumers_contexts": [
+      "supply-chain-api",
+      "notification-service"
+    ],
+    "partition_key": "tenant_id, location_id",
+    "contains_phi": false,
+    "retention_days": 365,
+    "description": "Stock fell below the reorder threshold."
+  },
+  {
+    "name": "stock.expiry-warning.v1",
+    "version": 1,
+    "producer": "stock-ledger-worker",
+    "consumers_contexts": [
+      "supply-chain-api",
+      "notification-service"
+    ],
+    "partition_key": "tenant_id, lot_id",
+    "contains_phi": false,
+    "retention_days": 365,
+    "description": "Lot approaching expiry within policy window."
+  },
+  {
+    "name": "charge.posted.v1",
+    "version": 1,
+    "producer": "billing-api",
+    "consumers_contexts": [
+      "ledger-worker",
+      "claims-worker"
+    ],
+    "partition_key": "tenant_id, charge_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "A chargeable service was posted."
+  },
+  {
+    "name": "invoice.issued.v1",
+    "version": 1,
+    "producer": "billing-api",
+    "consumers_contexts": [
+      "notification-service",
+      "ledger-worker"
+    ],
+    "partition_key": "tenant_id, invoice_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Invoice issued to patient or payer."
+  },
+  {
+    "name": "payment.received.v1",
+    "version": 1,
+    "producer": "billing-api",
+    "consumers_contexts": [
+      "ledger-worker",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, payment_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Payment received and receipted."
+  },
+  {
+    "name": "claim.submitted.v1",
+    "version": 1,
+    "producer": "claims-worker",
+    "consumers_contexts": [
+      "ledger-worker",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, claim_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Claim submitted to payer."
+  },
+  {
+    "name": "claim.adjudicated.v1",
+    "version": 1,
+    "producer": "claims-worker",
+    "consumers_contexts": [
+      "billing-api",
+      "ledger-worker"
+    ],
+    "partition_key": "tenant_id, claim_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Payer adjudicated a claim."
+  },
+  {
+    "name": "refund.approved.v1",
+    "version": 1,
+    "producer": "billing-api",
+    "consumers_contexts": [
+      "ledger-worker",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, refund_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Refund approved under dual control."
+  },
+  {
+    "name": "ledger.posted.v1",
+    "version": 1,
+    "producer": "ledger-worker",
+    "consumers_contexts": [
+      "public-health",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, entry_group_id",
+    "contains_phi": false,
+    "retention_days": 36500,
+    "description": "Balanced double-entry postings committed."
+  },
+  {
+    "name": "appointment.booked.v1",
+    "version": 1,
+    "producer": "scheduling-api",
+    "consumers_contexts": [
+      "notification-service",
+      "telehealth",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, appointment_id",
+    "contains_phi": true,
+    "retention_days": 365,
+    "description": "Appointment booked without resource conflict."
+  },
+  {
+    "name": "appointment.rescheduled.v1",
+    "version": 1,
+    "producer": "scheduling-api",
+    "consumers_contexts": [
+      "notification-service",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, appointment_id",
+    "contains_phi": true,
+    "retention_days": 365,
+    "description": "Appointment moved to a new slot."
+  },
+  {
+    "name": "appointment.cancelled.v1",
+    "version": 1,
+    "producer": "scheduling-api",
+    "consumers_contexts": [
+      "notification-service",
+      "capacity-planner"
+    ],
+    "partition_key": "tenant_id, appointment_id",
+    "contains_phi": true,
+    "retention_days": 365,
+    "description": "Appointment cancelled."
+  },
+  {
+    "name": "appointment.arrived.v1",
+    "version": 1,
+    "producer": "scheduling-api",
+    "consumers_contexts": [
+      "encounters",
+      "emergency"
+    ],
+    "partition_key": "tenant_id, appointment_id",
+    "contains_phi": true,
+    "retention_days": 365,
+    "description": "Patient arrived and is ready for encounter start."
+  },
+  {
+    "name": "appointment.no-show.v1",
+    "version": 1,
+    "producer": "scheduling-api",
+    "consumers_contexts": [
+      "capacity-planner",
+      "notification-service"
+    ],
+    "partition_key": "tenant_id, appointment_id",
+    "contains_phi": true,
+    "retention_days": 365,
+    "description": "Patient did not attend."
+  },
+  {
+    "name": "capacity.threshold-reached.v1",
+    "version": 1,
+    "producer": "capacity-planner",
+    "consumers_contexts": [
+      "notification-service",
+      "emergency",
+      "public-health"
+    ],
+    "partition_key": "tenant_id, facility_id",
+    "contains_phi": false,
+    "retention_days": 365,
+    "description": "Facility capacity crossed a configured threshold."
+  },
+  {
+    "name": "ambulance.dispatched.v1",
+    "version": 1,
+    "producer": "dispatch-adapter",
+    "consumers_contexts": [
+      "emergency",
+      "encounters",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, mission_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Ambulance dispatched with idempotency key."
+  },
+  {
+    "name": "prehospital.contact-recorded.v1",
+    "version": 1,
+    "producer": "emergency-api",
+    "consumers_contexts": [
+      "encounters",
+      "clinical-record"
+    ],
+    "partition_key": "tenant_id, contact_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Prehospital care record captured, possibly offline."
+  },
+  {
+    "name": "triage.assigned.v1",
+    "version": 1,
+    "producer": "triage-service",
+    "consumers_contexts": [
+      "encounters",
+      "notification-service"
+    ],
+    "partition_key": "tenant_id, encounter_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Triage category assigned or changed."
+  },
+  {
+    "name": "mass-casualty.activated.v1",
+    "version": 1,
+    "producer": "emergency-api",
+    "consumers_contexts": [
+      "capacity-planner",
+      "public-health",
+      "notification-service",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, incident_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Mass casualty mode activated."
+  },
+  {
+    "name": "telehealth.session-started.v1",
+    "version": 1,
+    "producer": "telehealth-api",
+    "consumers_contexts": [
+      "encounters",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, session_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Remote consultation started."
+  },
+  {
+    "name": "telehealth.session-ended.v1",
+    "version": 1,
+    "producer": "telehealth-api",
+    "consumers_contexts": [
+      "clinical-record",
+      "billing-api"
+    ],
+    "partition_key": "tenant_id, session_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Remote consultation ended with documentation obligations."
+  },
+  {
+    "name": "referral.created.v1",
+    "version": 1,
+    "producer": "referral-service",
+    "consumers_contexts": [
+      "notification-service",
+      "scheduling-capacity",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, referral_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Referral sent to a receiving facility."
+  },
+  {
+    "name": "referral.accepted.v1",
+    "version": 1,
+    "producer": "referral-service",
+    "consumers_contexts": [
+      "encounters",
+      "notification-service"
+    ],
+    "partition_key": "tenant_id, referral_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Receiving facility accepted the referral."
+  },
+  {
+    "name": "record-locator.query-logged.v1",
+    "version": 1,
+    "producer": "record-locator",
+    "consumers_contexts": [
+      "audit-writer",
+      "access-review-service"
+    ],
+    "partition_key": "tenant_id, patient_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "A record-location query occurred; query only, no content."
+  },
+  {
+    "name": "record.share-requested.v1",
+    "version": 1,
+    "producer": "exchange-gateway",
+    "consumers_contexts": [
+      "policy-decision-point",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, request_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "Cross-organisation sharing requested."
+  },
+  {
+    "name": "record.share-approved.v1",
+    "version": 1,
+    "producer": "exchange-gateway",
+    "consumers_contexts": [
+      "audit-writer",
+      "encounters",
+      "documents-media"
+    ],
+    "partition_key": "tenant_id, request_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "Policy approved sharing; access is now auditable."
+  },
+  {
+    "name": "record.share-denied.v1",
+    "version": 1,
+    "producer": "exchange-gateway",
+    "consumers_contexts": [
+      "audit-writer",
+      "siem-bridge"
+    ],
+    "partition_key": "tenant_id, request_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "Sharing denied by policy or consent."
+  },
+  {
+    "name": "document.received-external.v1",
+    "version": 1,
+    "producer": "hl7v2-adapter",
+    "consumers_contexts": [
+      "clinical-record",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, patient_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "External document accepted after validation and mapping."
+  },
+  {
+    "name": "device.enrolled.v1",
+    "version": 1,
+    "producer": "device-trust-service",
+    "consumers_contexts": [
+      "sync-api",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, device_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "A device was enrolled with attestation and scope."
+  },
+  {
+    "name": "device.revoked.v1",
+    "version": 1,
+    "producer": "device-trust-service",
+    "consumers_contexts": [
+      "sync-api",
+      "audit-writer",
+      "siem-bridge"
+    ],
+    "partition_key": "tenant_id, device_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Device revoked; wipe required on next contact."
+  },
+  {
+    "name": "sync.batch-applied.v1",
+    "version": 1,
+    "producer": "sync-api",
+    "consumers_contexts": [
+      "audit-writer",
+      "clinical-record"
+    ],
+    "partition_key": "tenant_id, device_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Offline mutation batch applied with authoritative versions."
+  },
+  {
+    "name": "sync.conflict-detected.v1",
+    "version": 1,
+    "producer": "sync-api",
+    "consumers_contexts": [
+      "notification-service",
+      "audit-writer",
+      "access-review-service"
+    ],
+    "partition_key": "tenant_id, device_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Conflict detected; human resolution required."
+  },
+  {
+    "name": "sync.snapshot-issued.v1",
+    "version": 1,
+    "producer": "snapshot-builder",
+    "consumers_contexts": [
+      "audit-writer",
+      "device-trust-service"
+    ],
+    "partition_key": "tenant_id, device_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Scoped encrypted offline snapshot issued with expiry."
+  },
+  {
+    "name": "notifiable-disease.reported.v1",
+    "version": 1,
+    "producer": "notifiable-disease-worker",
+    "consumers_contexts": [
+      "surveillance-api",
+      "audit-writer"
+    ],
+    "partition_key": "province_code",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "A notifiable case was detected and de-identified."
+  },
+  {
+    "name": "surveillance-signal.detected.v1",
+    "version": 1,
+    "producer": "surveillance-api",
+    "consumers_contexts": [
+      "public-health",
+      "notification-service"
+    ],
+    "partition_key": "province_code",
+    "contains_phi": false,
+    "retention_days": 3650,
+    "description": "Statistical signal requiring epidemiological review."
+  },
+  {
+    "name": "outbreak.alert-issued.v1",
+    "version": 1,
+    "producer": "surveillance-api",
+    "consumers_contexts": [
+      "notification-service",
+      "emergency"
+    ],
+    "partition_key": "province_code",
+    "contains_phi": false,
+    "retention_days": 3650,
+    "description": "Ministry issued an outbreak alert."
+  },
+  {
+    "name": "immunization-coverage.updated.v1",
+    "version": 1,
+    "producer": "analytics-export-service",
+    "consumers_contexts": [
+      "public-health",
+      "notification-service"
+    ],
+    "partition_key": "province_code",
+    "contains_phi": false,
+    "retention_days": 3650,
+    "description": "Coverage indicator refreshed."
+  },
+  {
+    "name": "ai.inference-completed.v1",
+    "version": 1,
+    "producer": "ai-orchestrator",
+    "consumers_contexts": [
+      "ai-oversight-worker",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, inference_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Draft AI output produced for human review."
+  },
+  {
+    "name": "ai.output-reviewed.v1",
+    "version": 1,
+    "producer": "ai-orchestrator",
+    "consumers_contexts": [
+      "clinical-record",
+      "audit-writer",
+      "ai-oversight-worker"
+    ],
+    "partition_key": "tenant_id, inference_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "Named clinician accepted, edited, or rejected AI output."
+  },
+  {
+    "name": "ai.model-approved.v1",
+    "version": 1,
+    "producer": "model-registry-api",
+    "consumers_contexts": [
+      "ai-orchestrator",
+      "audit-writer"
+    ],
+    "partition_key": "model_key",
+    "contains_phi": false,
+    "retention_days": 36500,
+    "description": "A model version was approved for a defined use."
+  },
+  {
+    "name": "ai.safety-incident.v1",
+    "version": 1,
+    "producer": "ai-oversight-worker",
+    "consumers_contexts": [
+      "model-registry-api",
+      "audit-security",
+      "notification-service"
+    ],
+    "partition_key": "model_key",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "AI safety incident; may suspend the model immediately."
+  },
+  {
+    "name": "audit.event-recorded.v1",
+    "version": 1,
+    "producer": "audit-writer",
+    "consumers_contexts": [
+      "siem-bridge",
+      "access-review-service"
+    ],
+    "partition_key": "tenant_id, event_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "Audit event persisted to the independent store."
+  },
+  {
+    "name": "access.export-completed.v1",
+    "version": 1,
+    "producer": "audit-writer",
+    "consumers_contexts": [
+      "audit-security",
+      "access-review-service"
+    ],
+    "partition_key": "tenant_id, export_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "A bulk export completed and must be reviewed."
+  },
+  {
+    "name": "security.anomaly-detected.v1",
+    "version": 1,
+    "producer": "siem-bridge",
+    "consumers_contexts": [
+      "audit-security",
+      "notification-service"
+    ],
+    "partition_key": "tenant_id, signal_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Anomalous access pattern detected."
+  },
+  {
+    "name": "notification.delivered.v1",
+    "version": 1,
+    "producer": "delivery-worker",
+    "consumers_contexts": [
+      "audit-writer",
+      "notification-service"
+    ],
+    "partition_key": "tenant_id, notification_id",
+    "contains_phi": true,
+    "retention_days": 365,
+    "description": "Notification delivery evidenced."
+  },
+  {
+    "name": "notification.failed.v1",
+    "version": 1,
+    "producer": "delivery-worker",
+    "consumers_contexts": [
+      "notification-service",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, notification_id",
+    "contains_phi": true,
+    "retention_days": 365,
+    "description": "Delivery failed after retries; escalation required."
+  },
+  {
+    "name": "facility.registered.v1",
+    "version": 1,
+    "producer": "facility-registry-api",
+    "consumers_contexts": [
+      "encounters",
+      "scheduling-capacity",
+      "inventory-supply",
+      "patient-identity",
+      "workforce",
+      "sync-api"
+    ],
+    "partition_key": "facility_id",
+    "contains_phi": false,
+    "retention_days": 3650,
+    "description": "Facility onboarded to the national network."
+  },
+  {
+    "name": "facility.status-changed.v1",
+    "version": 1,
+    "producer": "facility-registry-api",
+    "consumers_contexts": [
+      "emergency",
+      "record-locator",
+      "notification-service"
+    ],
+    "partition_key": "facility_id",
+    "contains_phi": false,
+    "retention_days": 3650,
+    "description": "Facility opening/closing/capability change."
+  },
+  {
+    "name": "service-catalogue.updated.v1",
+    "version": 1,
+    "producer": "service-catalog-api",
+    "consumers_contexts": [
+      "referral-service",
+      "emergency",
+      "record-locator"
+    ],
+    "partition_key": "facility_id",
+    "contains_phi": false,
+    "retention_days": 3650,
+    "description": "Service capability catalogue changed."
+  },
+  {
+    "name": "terminology-version.published.v1",
+    "version": 1,
+    "producer": "terminology-sync-worker",
+    "consumers_contexts": [
+      "lab-api",
+      "prescribing-api",
+      "fhir-facade",
+      "ai-orchestrator"
+    ],
+    "partition_key": "code_system",
+    "contains_phi": false,
+    "retention_days": 36500,
+    "description": "New terminology release published."
+  },
+  {
+    "name": "value-set.retired.v1",
+    "version": 1,
+    "producer": "terminology-service",
+    "consumers_contexts": [
+      "lab-api",
+      "prescribing-api",
+      "fhir-facade"
+    ],
+    "partition_key": "code_system",
+    "contains_phi": false,
+    "retention_days": 36500,
+    "description": "Value set retired; historical codes still resolvable."
+  },
+  {
+    "name": "credential.expiring.v1",
+    "version": 1,
+    "producer": "credential-verification-worker",
+    "consumers_contexts": [
+      "workforce-api",
+      "notification-service",
+      "policy-decision-point"
+    ],
+    "partition_key": "tenant_id, staff_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Licence or credential expires within notice window."
+  },
+  {
+    "name": "privilege.suspended.v1",
+    "version": 1,
+    "producer": "workforce-api",
+    "consumers_contexts": [
+      "policy-decision-point",
+      "audit-writer",
+      "sync-api"
+    ],
+    "partition_key": "tenant_id, staff_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "Clinical privilege suspended; access must reduce immediately."
+  },
+  {
+    "name": "staff.terminated.v1",
+    "version": 1,
+    "producer": "workforce-api",
+    "consumers_contexts": [
+      "policy-decision-point",
+      "sync-api",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, staff_id",
+    "contains_phi": true,
+    "retention_days": 36500,
+    "description": "Staff employment ended; sessions and devices revoked."
+  },
+  {
+    "name": "document.stored.v1",
+    "version": 1,
+    "producer": "media-gateway",
+    "consumers_contexts": [
+      "documents-media",
+      "audit-writer"
+    ],
+    "partition_key": "tenant_id, object_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Object stored with hash and scan status."
+  },
+  {
+    "name": "document.scan-failed.v1",
+    "version": 1,
+    "producer": "object-lifecycle-worker",
+    "consumers_contexts": [
+      "audit-writer",
+      "notification-service"
+    ],
+    "partition_key": "tenant_id, object_id",
+    "contains_phi": true,
+    "retention_days": 3650,
+    "description": "Malware scan failed; object quarantined."
+  }
+]
